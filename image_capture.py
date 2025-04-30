@@ -1,9 +1,9 @@
 import cv2
 import os
 from datetime import datetime
-import time
 
-# Change this to the name of the person you're photographing
+ESP32_CAM_URL = 'http://192.168.137.88:81/stream'
+
 PERSON_NAME = "Khau"
 
 
@@ -21,34 +21,28 @@ def create_folder(name):
 def capture_photos(name):
     folder = create_folder(name)
 
-    # Initialize the camera (use 0 for default webcam)
-    cap = cv2.VideoCapture(0)
+    video_capture = cv2.VideoCapture(ESP32_CAM_URL)
 
-    # Set resolution
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
-    # Allow camera to warm up
-    time.sleep(2)
+    if not video_capture.isOpened():
+        print("Cannot open video stream!")
+        return
 
     photo_count = 0
 
     print(f"Taking photos for {name}. Press SPACE to capture, 'q' to quit.")
 
     while True:
-        # Capture frame from webcam
-        ret, frame = cap.read()
+        ret, frame = video_capture.read()
 
         if not ret:
-            print("Failed to grab frame")
+            print("Cannot receive frame from video stream!")
             break
 
-        # Display the frame
         cv2.imshow('Capture', frame)
 
         key = cv2.waitKey(1) & 0xFF
 
-        if key == ord(' '):  # Space key
+        if key == ord(' '):
             photo_count += 1
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"{name}_{timestamp}.jpg"
@@ -56,12 +50,12 @@ def capture_photos(name):
             cv2.imwrite(filepath, frame)
             print(f"Photo {photo_count} saved: {filepath}")
 
-        elif key == ord('q'):  # Q key
+        elif key == ord('q'):
             break
 
     # Clean up
-    cap.release()
     cv2.destroyAllWindows()
+    video_capture.release()
     print(f"Photo capture completed. {photo_count} photos saved for {name}.")
 
 
